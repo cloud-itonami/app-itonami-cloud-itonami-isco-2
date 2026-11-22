@@ -44,14 +44,18 @@ async function repoData() {
   return { identity, version: meta.version, blueprint, physics: null, console: null, sources: {}, descriptor: { operations: [] } };
 }
 
-test("the about view carries both attribution sentences with this repository's code", async () => {
+test("the about view carries both attribution sentences with this repository's code (digit count follows the level)", async () => {
   const data = await repoData();
   const identity = data.identity;
   if (identity.scheme !== "isco") {
     assert.equal(attributionFor(identity), null, "only ISCO-08 needs the ILO attribution");
     return;
   }
-  assert.match(identity.code, /^[0-9]{1,4}$/, "an ISCO-08 code has 1-4 digits (major/sub-major/minor/unit)");
+  const LEVELS = { "major group": 1, "sub-major group": 2, "minor group": 3, "unit group": 4 };
+  const want = LEVELS[identity.level];
+  assert.ok(want !== undefined, `unknown ISCO level ${JSON.stringify(identity.level)}`);
+  assert.match(identity.code, /^[0-9]+$/, "ISCO code is digits");
+  assert.equal(identity.code.length, want, `code length matches level ${identity.level}`);
   const declared = data.blueprint["itonami.blueprint/isco-08"];
   if (declared !== undefined) assert.equal(String(declared), identity.code, "blueprint.edn names the same code");
   const tree = panelTree(data, TAB_ABOUT);
